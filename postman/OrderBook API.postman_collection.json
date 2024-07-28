@@ -1,0 +1,685 @@
+{
+	"info": {
+		"_postman_id": "bc3aff4e-a4a3-489f-9dac-6d5d0cc95af9",
+		"name": "OrderBook API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "178308"
+	},
+	"item": [
+		{
+			"name": "User Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the JSON response",
+							"const jsonResponse = pm.response.json();",
+							"",
+							"// Check if the token is present",
+							"if (jsonResponse.Bearer) {",
+							"    // Set the token as an environment variable",
+							"    pm.environment.set(\"authToken\", jsonResponse.Bearer);",
+							"}",
+							"",
+							"// Log the token for verification (optional)",
+							"console.log(\"Token set in environment variable: \", pm.environment.get(\"authToken\"));",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-VALR-API-KEY",
+						"value": "{{yourApiKey}}",
+						"description": "Your API Key",
+						"type": "text"
+					},
+					{
+						"key": "X-VALR-SIGNATURE",
+						"value": "{{requestSignature}}",
+						"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature.",
+						"type": "text"
+					},
+					{
+						"key": "X-VALR-TIMESTAMP",
+						"value": "{{requestTimestamp}}",
+						"description": "The same timestamp used to generate the request signature (in Unix epoch time format, in milliseconds). \n\nExample: If the current date and time is `December 28, 2019 00:00:00 UTC`. then the Unix epoch time would be `1577491200000`. Note that this timestamp is in milliseconds.",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\" : \"admin\",\n    \"password\" : \"admin\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiBaseUrl}}/api/user/login",
+					"host": [
+						"{{apiBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"login"
+					]
+				},
+				"description": "Get all open orders for your account.\n\nA `customerOrderId` field will be returned in the response for all those orders that were created with a `customerOrderId` field."
+			},
+			"response": [
+				{
+					"name": "All Open Orders",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-VALR-API-KEY",
+								"value": "{{yourApiKey}}",
+								"description": "Your API Key"
+							},
+							{
+								"key": "X-VALR-SIGNATURE",
+								"value": "{{requestSignature}}",
+								"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature."
+							},
+							{
+								"key": "X-VALR-TIMESTAMP",
+								"value": "{{requestTimestamp}}",
+								"description": "The same timestamp used to generate the request signature (in Unix epoch time format, in milliseconds). \n\nExample: If the current date and time is `December 28, 2019 00:00:00 UTC`. then the Unix epoch time would be `1577491200000`. Note that this timestamp is in milliseconds."
+							}
+						],
+						"url": {
+							"raw": "{{apiBaseUrl}}/v1/orders/open",
+							"host": [
+								"{{apiBaseUrl}}"
+							],
+							"path": [
+								"v1",
+								"orders",
+								"open"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Wed, 08 May 2024 12:01:30 GMT"
+						},
+						{
+							"key": "x-xss-protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "x-content-type-options",
+							"value": "nosniff"
+						},
+						{
+							"key": "x-frame-options",
+							"value": "Deny"
+						},
+						{
+							"key": "content-security-policy",
+							"value": "default-src 'none'"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "x-valr-upstream-service-time",
+							"value": "1"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=15552000; includeSubDomains; preload"
+						},
+						{
+							"key": "content-encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "server",
+							"value": "envoy"
+						},
+						{
+							"key": "Via",
+							"value": "1.1 google"
+						},
+						{
+							"key": "Alt-Svc",
+							"value": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"orderId\": \"4cbf1b17-fa28-4be3-8d36-08b829cfedf9\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"0.00005062\",\n        \"price\": \"66391\",\n        \"currencyPair\": \"BTCUSDC\",\n        \"createdAt\": \"2024-05-08T11:51:29.169Z\",\n        \"originalQuantity\": \"0.00015062\",\n        \"filledPercentage\": \"66.39\",\n        \"updatedAt\": \"2024-05-08T11:51:29.181Z\",\n        \"status\": \"Partially Filled\",\n        \"type\": \"limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": true\n    },\n    {\n        \"orderId\": \"4352df1d-6d24-472e-8a81-9c03e74690e7\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"3\",\n        \"price\": \"17.9\",\n        \"currencyPair\": \"AVAXUSDC\",\n        \"createdAt\": \"2024-05-08T11:55:14.422Z\",\n        \"originalQuantity\": \"3\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T11:55:14.423Z\",\n        \"status\": \"Placed\",\n        \"type\": \"limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"9d0b49ef-fd54-4653-822d-bef023e2e2e4\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"0.12\",\n        \"price\": \"381\",\n        \"currencyPair\": \"AVAXZAR\",\n        \"createdAt\": \"2024-05-08T11:55:56.682Z\",\n        \"originalQuantity\": \"0.12\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T11:55:56.683Z\",\n        \"status\": \"Placed\",\n        \"type\": \"limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"6506546f-eb88-4cde-9409-eeec17bdf062\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"12\",\n        \"price\": \"36\",\n        \"currencyPair\": \"SOLUSDC\",\n        \"createdAt\": \"2024-05-08T11:57:27.222Z\",\n        \"originalQuantity\": \"12\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T11:57:27.245Z\",\n        \"status\": \"Placed\",\n        \"type\": \"post-only limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"d75888b8-58e9-4472-ad75-911018fc1770\",\n        \"side\": \"buy\",\n        \"remainingQuantity\": \"0.015954\",\n        \"price\": \"0.06268\",\n        \"currencyPair\": \"ETHBTC\",\n        \"createdAt\": \"2024-05-08T12:00:46.890Z\",\n        \"originalQuantity\": \"0.015954\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T12:00:46.909Z\",\n        \"status\": \"Placed\",\n        \"type\": \"post-only limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"ec8f3d88-0a22-4dad-af26-bed0148883b7\",\n        \"side\": \"buy\",\n        \"remainingQuantity\": \"12\",\n        \"price\": \"0.99989\",\n        \"currencyPair\": \"PYUSDUSDT\",\n        \"createdAt\": \"2024-05-08T12:01:25.860Z\",\n        \"originalQuantity\": \"12\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T12:01:25.861Z\",\n        \"status\": \"Placed\",\n        \"type\": \"post-only limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    }\n]"
+				},
+				{
+					"name": "Active and Triggered Open Stop Orders",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-VALR-API-KEY",
+								"value": "{{yourApiKey}}",
+								"description": "Your API Key",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-SIGNATURE",
+								"value": "{{requestSignature}}",
+								"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature.",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-TIMESTAMP",
+								"value": "{{requestTimestamp}}",
+								"description": "The same timestamp used to generate the request signature (in Unix epoch time format, in milliseconds). \n\nExample: If the current date and time is `December 28, 2019 00:00:00 UTC`. then the Unix epoch time would be `1577491200000`. Note that this timestamp is in milliseconds.",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiBaseUrl}}/v1/orders/open",
+							"host": [
+								"{{apiBaseUrl}}"
+							],
+							"path": [
+								"v1",
+								"orders",
+								"open"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Thu, 18 Aug 2022 12:40:22 GMT"
+						},
+						{
+							"key": "x-xss-protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "x-content-type-options",
+							"value": "nosniff"
+						},
+						{
+							"key": "x-frame-options",
+							"value": "Deny"
+						},
+						{
+							"key": "content-security-policy",
+							"value": "default-src 'none'"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "x-valr-upstream-service-time",
+							"value": "6"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=15552000; includeSubDomains; preload"
+						},
+						{
+							"key": "content-encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "server",
+							"value": "envoy"
+						},
+						{
+							"key": "Via",
+							"value": "1.1 google"
+						},
+						{
+							"key": "Alt-Svc",
+							"value": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"orderId\": \"b4b678f4-eae7-477d-b48f-0e27a25efadc\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"10\",\n        \"price\": \"10\",\n        \"currencyPair\": \"XRPZAR\",\n        \"createdAt\": \"2022-08-17T15:13:24.732Z\",\n        \"originalQuantity\": \"10\",\n        \"filledPercentage\": \"0.00\",\n        \"stopPrice\": \"3000\",\n        \"updatedAt\": \"2022-08-18T12:40:07.992Z\",\n        \"status\": \"Placed\",\n        \"type\": \"stop-loss-limit\",\n        \"timeInForce\": \"GTC\"\n    },\n    {\n        \"orderId\": \"ff72a8d6-161f-43a6-806d-68061afc3c7a\",\n        \"side\": \"buy\",\n        \"remainingQuantity\": \"10\",\n        \"price\": \"10\",\n        \"currencyPair\": \"XRPZAR\",\n        \"createdAt\": \"2022-08-18T12:34:56.112Z\",\n        \"originalQuantity\": \"10\",\n        \"filledPercentage\": \"0.00\",\n        \"customerOrderId\": \"556789\",\n        \"stopPrice\": \"12\",\n        \"updatedAt\": \"2022-08-18T12:34:56.115Z\",\n        \"status\": \"Active\",\n        \"type\": \"take-profit-limit\",\n        \"timeInForce\": \"GTC\"\n    }\n]"
+				}
+			]
+		},
+		{
+			"name": "Get Order Book",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-VALR-API-KEY",
+						"value": "{{yourApiKey}}",
+						"description": "Your API Key",
+						"type": "text"
+					},
+					{
+						"key": "X-VALR-SIGNATURE",
+						"value": "{{requestSignature}}",
+						"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature.",
+						"type": "text"
+					},
+					{
+						"key": "X-VALR-TIMESTAMP",
+						"value": "{{requestTimestamp}}",
+						"description": "The same timestamp used to generate the request signature (in Unix epoch time format, in milliseconds). \n\nExample: If the current date and time is `December 28, 2019 00:00:00 UTC`. then the Unix epoch time would be `1577491200000`. Note that this timestamp is in milliseconds.",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{apiBaseUrl}}/api/BTCZAR/orderbook",
+					"host": [
+						"{{apiBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"BTCZAR",
+						"orderbook"
+					]
+				},
+				"description": "Get all open orders for your account.\n\nA `customerOrderId` field will be returned in the response for all those orders that were created with a `customerOrderId` field."
+			},
+			"response": [
+				{
+					"name": "All Open Orders",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-VALR-API-KEY",
+								"value": "{{yourApiKey}}",
+								"description": "Your API Key"
+							},
+							{
+								"key": "X-VALR-SIGNATURE",
+								"value": "{{requestSignature}}",
+								"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature."
+							},
+							{
+								"key": "X-VALR-TIMESTAMP",
+								"value": "{{requestTimestamp}}",
+								"description": "The same timestamp used to generate the request signature (in Unix epoch time format, in milliseconds). \n\nExample: If the current date and time is `December 28, 2019 00:00:00 UTC`. then the Unix epoch time would be `1577491200000`. Note that this timestamp is in milliseconds."
+							}
+						],
+						"url": {
+							"raw": "{{apiBaseUrl}}/v1/orders/open",
+							"host": [
+								"{{apiBaseUrl}}"
+							],
+							"path": [
+								"v1",
+								"orders",
+								"open"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Wed, 08 May 2024 12:01:30 GMT"
+						},
+						{
+							"key": "x-xss-protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "x-content-type-options",
+							"value": "nosniff"
+						},
+						{
+							"key": "x-frame-options",
+							"value": "Deny"
+						},
+						{
+							"key": "content-security-policy",
+							"value": "default-src 'none'"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "x-valr-upstream-service-time",
+							"value": "1"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=15552000; includeSubDomains; preload"
+						},
+						{
+							"key": "content-encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "server",
+							"value": "envoy"
+						},
+						{
+							"key": "Via",
+							"value": "1.1 google"
+						},
+						{
+							"key": "Alt-Svc",
+							"value": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"orderId\": \"4cbf1b17-fa28-4be3-8d36-08b829cfedf9\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"0.00005062\",\n        \"price\": \"66391\",\n        \"currencyPair\": \"BTCUSDC\",\n        \"createdAt\": \"2024-05-08T11:51:29.169Z\",\n        \"originalQuantity\": \"0.00015062\",\n        \"filledPercentage\": \"66.39\",\n        \"updatedAt\": \"2024-05-08T11:51:29.181Z\",\n        \"status\": \"Partially Filled\",\n        \"type\": \"limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": true\n    },\n    {\n        \"orderId\": \"4352df1d-6d24-472e-8a81-9c03e74690e7\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"3\",\n        \"price\": \"17.9\",\n        \"currencyPair\": \"AVAXUSDC\",\n        \"createdAt\": \"2024-05-08T11:55:14.422Z\",\n        \"originalQuantity\": \"3\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T11:55:14.423Z\",\n        \"status\": \"Placed\",\n        \"type\": \"limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"9d0b49ef-fd54-4653-822d-bef023e2e2e4\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"0.12\",\n        \"price\": \"381\",\n        \"currencyPair\": \"AVAXZAR\",\n        \"createdAt\": \"2024-05-08T11:55:56.682Z\",\n        \"originalQuantity\": \"0.12\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T11:55:56.683Z\",\n        \"status\": \"Placed\",\n        \"type\": \"limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"6506546f-eb88-4cde-9409-eeec17bdf062\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"12\",\n        \"price\": \"36\",\n        \"currencyPair\": \"SOLUSDC\",\n        \"createdAt\": \"2024-05-08T11:57:27.222Z\",\n        \"originalQuantity\": \"12\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T11:57:27.245Z\",\n        \"status\": \"Placed\",\n        \"type\": \"post-only limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"d75888b8-58e9-4472-ad75-911018fc1770\",\n        \"side\": \"buy\",\n        \"remainingQuantity\": \"0.015954\",\n        \"price\": \"0.06268\",\n        \"currencyPair\": \"ETHBTC\",\n        \"createdAt\": \"2024-05-08T12:00:46.890Z\",\n        \"originalQuantity\": \"0.015954\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T12:00:46.909Z\",\n        \"status\": \"Placed\",\n        \"type\": \"post-only limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    },\n    {\n        \"orderId\": \"ec8f3d88-0a22-4dad-af26-bed0148883b7\",\n        \"side\": \"buy\",\n        \"remainingQuantity\": \"12\",\n        \"price\": \"0.99989\",\n        \"currencyPair\": \"PYUSDUSDT\",\n        \"createdAt\": \"2024-05-08T12:01:25.860Z\",\n        \"originalQuantity\": \"12\",\n        \"filledPercentage\": \"0.00\",\n        \"updatedAt\": \"2024-05-08T12:01:25.861Z\",\n        \"status\": \"Placed\",\n        \"type\": \"post-only limit\",\n        \"timeInForce\": \"GTC\",\n        \"allowMargin\": false\n    }\n]"
+				},
+				{
+					"name": "Active and Triggered Open Stop Orders",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-VALR-API-KEY",
+								"value": "{{yourApiKey}}",
+								"description": "Your API Key",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-SIGNATURE",
+								"value": "{{requestSignature}}",
+								"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature.",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-TIMESTAMP",
+								"value": "{{requestTimestamp}}",
+								"description": "The same timestamp used to generate the request signature (in Unix epoch time format, in milliseconds). \n\nExample: If the current date and time is `December 28, 2019 00:00:00 UTC`. then the Unix epoch time would be `1577491200000`. Note that this timestamp is in milliseconds.",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiBaseUrl}}/v1/orders/open",
+							"host": [
+								"{{apiBaseUrl}}"
+							],
+							"path": [
+								"v1",
+								"orders",
+								"open"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "date",
+							"value": "Thu, 18 Aug 2022 12:40:22 GMT"
+						},
+						{
+							"key": "x-xss-protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "x-content-type-options",
+							"value": "nosniff"
+						},
+						{
+							"key": "x-frame-options",
+							"value": "Deny"
+						},
+						{
+							"key": "content-security-policy",
+							"value": "default-src 'none'"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "x-valr-upstream-service-time",
+							"value": "6"
+						},
+						{
+							"key": "strict-transport-security",
+							"value": "max-age=15552000; includeSubDomains; preload"
+						},
+						{
+							"key": "content-encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "server",
+							"value": "envoy"
+						},
+						{
+							"key": "Via",
+							"value": "1.1 google"
+						},
+						{
+							"key": "Alt-Svc",
+							"value": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"orderId\": \"b4b678f4-eae7-477d-b48f-0e27a25efadc\",\n        \"side\": \"sell\",\n        \"remainingQuantity\": \"10\",\n        \"price\": \"10\",\n        \"currencyPair\": \"XRPZAR\",\n        \"createdAt\": \"2022-08-17T15:13:24.732Z\",\n        \"originalQuantity\": \"10\",\n        \"filledPercentage\": \"0.00\",\n        \"stopPrice\": \"3000\",\n        \"updatedAt\": \"2022-08-18T12:40:07.992Z\",\n        \"status\": \"Placed\",\n        \"type\": \"stop-loss-limit\",\n        \"timeInForce\": \"GTC\"\n    },\n    {\n        \"orderId\": \"ff72a8d6-161f-43a6-806d-68061afc3c7a\",\n        \"side\": \"buy\",\n        \"remainingQuantity\": \"10\",\n        \"price\": \"10\",\n        \"currencyPair\": \"XRPZAR\",\n        \"createdAt\": \"2022-08-18T12:34:56.112Z\",\n        \"originalQuantity\": \"10\",\n        \"filledPercentage\": \"0.00\",\n        \"customerOrderId\": \"556789\",\n        \"stopPrice\": \"12\",\n        \"updatedAt\": \"2022-08-18T12:34:56.115Z\",\n        \"status\": \"Active\",\n        \"type\": \"take-profit-limit\",\n        \"timeInForce\": \"GTC\"\n    }\n]"
+				}
+			]
+		},
+		{
+			"name": "Submit Limit Order",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"side\": \"BUY\",\n    \"quantity\": \"0.02352094\",\n    \"price\": \"1205649\",\n    \"currencyPair\": \"BTCZAR\"\n}"
+				},
+				"url": {
+					"raw": "{{apiBaseUrl}}/api/order/limit",
+					"host": [
+						"{{apiBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"order",
+						"limit"
+					]
+				},
+				"description": "Create a new limit order.\n\nThe JSON body used to create a limit order looks like this:\n\n``` json\n{\n    \"side\": \"SELL\",\n    \"quantity\": \"0.100000\",\n    \"price\": \"64250\",\n    \"pair\": \"BTCUSDC\",\n    \"postOnly\": true,\n    \"customerOrderId\": \"1234\",\n    \"timeInForce\": \"GTC\",\n    \"allowMargin\": \"false\"\n}\n\n ```\n\n| Parameter | Description |\n| --- | --- |\n| side (required) | `BUY` or `SELL (should be upper case)` |\n| quantity (required) | Base amount (the amount submitted will be truncated to `baseDecimalPlaces` of the currency pair) |\n| price (required) | Price in quote Currency |\n| pair (required) | Can be any supported currency pair e.g. `BTCUSDC`, `ETHUSDC` or `BTCUSDT` |\n| postOnly (optional) | `true` or `false` |\n| customerOrderId (optional) | Alphanumeric value. See below for explanation. |\n| timeInForce (optional) | Can be `GTC`, `FOK` or `IOC`. `(should be upper case)`Default value is `GTC`. See below for explanation |\n| allowMargin (optional) | `true` or `false`. Default value is `false`. See below for explanation. |\n\n**Notes**\n\nThe `customerOrderId` is an optional field which can be specified by clients to track this order using their own internal order management systems.\n\n`postOnly=true` will place a Maker order and cause it to fail if matched immediately.\n\n`timeInForce` is the duration that an order will remain active, this can be Good Till Cancelled (GTC), Fill or Kill (FOK) or Immediate or Cancel (IOC).\n\n- When you retrieve your open orders or history of orders, this field will also be returned along with the VALR's `orderId` for each order for which this field was specified during creation.\n- When you cancel an order, you can either specify `orderId` or `customerOrderId`, not both.\n- `customerOrderId` allows dashes \"-\" or alphanumeric, but no special chars, limit of 50 characters.\n- The `customerOrderId` has to be unique across all open orders for a given account. If you do reuse an `id` value that is currently an active open order, your order will not be placed (you can check the status of an order using the order status API call).\n- `allowMargin` - Set to `true` for a margin / leverage trade. Only subaccounts support margin trades. Each subaccount must be enabled individually using the account/status API.\n    \n\n**Fee currency**\n\n- If you are a Maker and you are Buying BTC with USDC, your reward will be paid in USDC\n- If you are a Maker and you are Selling BTC for USDC, your reward will be paid in BTC\n- If you are a Taker and you are Buying BTC with USDC, your fee will be charged in BTC\n- If you are a Taker and you are Selling BTC for USDC, your fee will be charged in USDC\n    \n\nIn short, fees will be in the currency that the taker is receiving and the maker is paying in the trade. The following example uses the `BTCUSDC` trading pair:\n\n| BTC/ZAR | MAKER | TAKER | FEE/REWARD CURRENCY |\n| --- | --- | --- | --- |\n| TRADE SIDE | BUY | SELL | USDC |\n| TRADE SIDE | SELL | BUY | BTC |\n\n**PLEASE NOTE**: When you receive a response with an id,  \nit does not always mean that the order has been placed.  \nWhen the response is `202 Accepted`, you can use the  \nOrder Status REST API or use WebSocket API to receive the status  \nof this order. The reasons why an order could fail are as follows:\n\n- Insufficient balance in your account.\n- If you're using a non-unique `customerOrderId`.\n- If you set `postOnly` flag to true, but your order would have matched immediately.\n- Self trading: If your order matches against your own order (on the other side).\n- Insufficient liquidity: If you're placing an order and there isn't liquidity to fulfill the order."
+			},
+			"response": [
+				{
+					"name": "Limit order accepted",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"name": "Content-Type",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-API-KEY",
+								"value": "{{yourApiKey}}",
+								"description": "Your API Key",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-SIGNATURE",
+								"value": "{{requestSignature}}",
+								"description": "Request Signature generated for this request. See section about **Authentication** above to learn how to generate this request signature.",
+								"type": "text"
+							},
+							{
+								"key": "X-VALR-TIMESTAMP",
+								"value": "{{requestTimestamp}}",
+								"description": "The same timestamp used to generate request signature",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"side\": \"SELL\",\n\t\"quantity\": \"0.100000\",\n\t\"price\": \"10000\",\n\t\"pair\": \"BTCZAR\",\n\t\"postOnly\": true,\n\t\"customerOrderId\": \"1235\"\n}"
+						},
+						"url": {
+							"raw": "https://api.valr.com/v1/orders/limit",
+							"protocol": "https",
+							"host": [
+								"api",
+								"valr",
+								"com"
+							],
+							"path": [
+								"v1",
+								"orders",
+								"limit"
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 14 Apr 2019 20:18:28 GMT"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "1; mode=block"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "Deny"
+						},
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'none'"
+						},
+						{
+							"key": "Server",
+							"value": "Other"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						}
+					],
+					"cookie": [],
+					"body": "{\n\t/*NOTE: When you receive this response with an id,\n\tit does not always mean that the order has been placed. \n\tWhen the response is 202 Accepted, you can either use the \n\tOrder Status REST API or use WebSocket API to receive status\n\tupdate about this order. */\n    \"id\": \"558f5e0a-ffd1-46dd-8fae-763d93fa2f25\" \n}\n\n"
+				}
+			]
+		},
+		{
+			"name": "Get Trade History",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiBaseUrl}}/api/BTCZAR/trades",
+					"host": [
+						"{{apiBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"BTCZAR",
+						"trades"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
