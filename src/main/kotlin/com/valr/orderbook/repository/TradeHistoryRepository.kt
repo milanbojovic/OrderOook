@@ -48,6 +48,6 @@ class TradeHistoryRepository {
         trades.add(Trade(getNextAvailableId(), 2159877, 0.56879135, BTC_ZAR, "2022-10-11T13:44:24.571Z", Side.SELL, 570680.8748647))
         trades.add(Trade(getNextAvailableId(), 1111115, 0.56879135, BTC_ZAR, "2022-10-11T13:44:24.571Z", Side.SELL, 570680.8748647))
         trades.add(Trade(getNextAvailableId(), 2222222, 0.56879135, BTC_ZAR, "2022-10-11T13:44:24.571Z", Side.SELL, 570680.8748647))
-        trades.add(Trade(getNextAvailableId(), 4567895, 0.56879135, BTC_ZAR, "2022-10-11T13:44:24.571Z", Side.SELL, 570680.8748647))
+        trades.add(Trade(getNextAvailableId(), 4567895, 0.56879135, BTC_ZAR, "2022-10-11T13:44:24.571Z", Side.BUY, 570680.8748647))
     }
 }

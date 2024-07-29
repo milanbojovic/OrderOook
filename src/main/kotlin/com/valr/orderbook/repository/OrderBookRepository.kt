@@ -35,6 +35,10 @@ class OrderBookRepository {
         }
     }
 
+    fun updateOrderBook(orderBook: OrderBook) {
+        this.orderBook = orderBook
+    }
+
     private fun matchedOrderExecution(order: Order, matchedOrder: Order): Order {
         val quantityDiff = subQuantities(order, matchedOrder)
         if (quantityDiff == 0.0) {

@@ -3,284 +3,340 @@ package com.valr.orderbook.rest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.valr.orderbook.data.LimitOrderDTO
 import com.valr.orderbook.data.TradeHistory
-import com.valr.orderbook.data.User
 import com.valr.orderbook.data.UserDTO
 import com.valr.orderbook.data.enum.Side
-import com.valr.orderbook.security.JwtUtil
 import com.valr.orderbook.service.OrderBookService
 import com.valr.orderbook.service.TradeHistoryService
-import com.valr.orderbook.service.UserService
 import com.valr.orderbook.util.TestHelper.BTC_ZAR
-import com.valr.orderbook.util.TestHelper.createOrder
-import com.valr.orderbook.util.TestHelper.createOrderBook
-import org.junit.jupiter.api.BeforeEach
+import com.valr.orderbook.util.TestHelper.ETH_USD
+import io.vertx.core.Vertx
+import io.vertx.core.http.HttpClientResponse
+import io.vertx.core.http.HttpMethod
+import io.vertx.junit5.VertxExtension
+import io.vertx.junit5.VertxTestContext
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.MvcResult
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
-import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import org.mockito.Mockito.`when` as whenever
+import org.springframework.test.context.event.annotation.BeforeTestClass
+
+private const val CONTENT_TYPE = "content-type"
+private const val HOST = "localhost"
+private const val APPLICATION_JSON = "application/json"
+
+private const val ADMIN = "admin"
 
 @SpringBootTest
-class WebControllerTest {
+@ExtendWith(VertxExtension::class)
+class WebControllerTest() {
+    @Value("\${vertex.server.port}")
+    private var vertXServerPort: Int = 0
 
-    val skip: String = "skip"
-    val limit: String = "limit"
-
-    @Mock
-    private lateinit var jwtUtil: JwtUtil
-
-    @Mock
-    private lateinit var orderBookService: OrderBookService
-
-    @Mock
-    private lateinit var tradeHistoryService: TradeHistoryService
-
-    @Mock
-    private lateinit var userService: UserService
-
-    @InjectMocks
-    private lateinit var webController: WebController
+    @Autowired
+    private lateinit var webVerticle: WebVerticle
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
-    private lateinit var mockMvc: MockMvc
+    @Autowired
+    private lateinit var tradeHistoryService: TradeHistoryService
 
-    @BeforeEach
-    fun setup() {
+    @Autowired
+    lateinit var orderBookService: OrderBookService
+
+
+    @BeforeTestClass
+    fun deployVerticle(vertx: Vertx, testContext: VertxTestContext) {
         MockitoAnnotations.openMocks(this)
-        webController = WebController(orderBookService, tradeHistoryService, userService, jwtUtil)
-        mockMvc = MockMvcBuilders.standaloneSetup(webController).build()
+        objectMapper = ObjectMapper()
+        vertx.deployVerticle(webVerticle, testContext.succeedingThenComplete())
     }
 
     @Test
-    fun login_with_valid_credentials_returns_token() {
-        whenever(jwtUtil.generateToken(anyString())).thenReturn("mockToken")
-        whenever(userService.login(anyString(), anyString())).thenReturn(Optional.of(createTestUser()))
+    fun login_with_valid_credentials_returns_token(vertx: Vertx, testContext: VertxTestContext) {
+        val userDTO = UserDTO(ADMIN, ADMIN)
+        val json = objectMapper.writeValueAsString(userDTO)
 
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/user/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(UserDTO("admin", "admin"))))
-            .andExpect(status().isOk)
-            .andReturn()
-
-        val actualResponse = mvcResult.response.contentAsString
-        assertTrue(actualResponse.contains("Bearer") && actualResponse.contains("mockToken"))
-    }
-
-    private fun createTestUser(): User {
-        return User("John", "Doe", "john.doe@valr.com", "john.doe", "pass")
-    }
-
-    @Test
-    fun login_with_invalid_credentials_returns_unauthorized() {
-        whenever(userService.login(anyString(), anyString())).thenReturn(Optional.empty())
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/user/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(UserDTO("admin1", "admin1"))))
-            .andExpect(status().isUnauthorized)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertTrue(actualResponse.contains("Invalid username or password."))
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/user/login")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Bearer")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun login_with_null_username_returns_bad_request() {
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/user/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(UserDTO(null.toString(), "admin"))))
-            .andExpect(status().isUnauthorized)
-            .andReturn()
+    fun login_with_invalid_credentials_returns_unauthorized(vertx: Vertx, testContext: VertxTestContext) {
+        val userDTO = UserDTO("admin1", "admin1")
+        val json = objectMapper.writeValueAsString(userDTO)
 
-        val actualResponse = mvcResult.response.contentAsString
-        assertTrue(actualResponse.contains("Invalid login request. Invalid username or password."))
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/user/login")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid login request. Invalid username or password.")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun login_with_null_pass_returns_bad_request() {
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/user/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(UserDTO("admin", null.toString()))))
-            .andExpect(status().isUnauthorized)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertTrue(actualResponse.contains("Invalid login request. Invalid username or password."))
+    fun login_with_null_username_returns_bad_request(vertx: Vertx, testContext: VertxTestContext) {
+        val userDTO = UserDTO(null.toString(), ADMIN)
+        val json = objectMapper.writeValueAsString(userDTO)
+
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/user/login")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid login request. Invalid username or password.")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_orderbook_with_valid_currency_pair_returns_orderbook() {
-        val orderBook = createOrderBook()
-        whenever(orderBookService.getOrderBookBy(anyString())).thenReturn(orderBook)
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR/orderbook")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals(objectMapper.writeValueAsString(orderBook), actualResponse)
-        verify(orderBookService).getOrderBookBy(BTC_ZAR)
+    fun login_with_null_pass_returns_bad_request(vertx: Vertx, testContext: VertxTestContext) {
+        val userDTO = UserDTO(ADMIN, null.toString())
+        val json = objectMapper.writeValueAsString(userDTO)
+
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/user/login")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid login request. Invalid username or password.")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_orderbook_with_invalid_currency_pair_returns_error() {
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR1/orderbook")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-21,\"message\":\"Invalid currency pair. Please provide a 6 character currency pair - valid example: BTCZAR | btczar.\"}", actualResponse)
+    fun get_orderbook_with_valid_currency_pair_returns_orderbook(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/ETHUSD/orderbook")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains(ETH_USD)
+                    assertThat(buffer.toString()).contains("\"quantity\":8.979E-4,\"price\":1205748")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_orderbook_with_special_character_in_currency_pair_error() {
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTC@AR/orderbook")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-21,\"message\":\"Invalid currency pair. Please provide a 6 character currency pair - valid example: BTCZAR | btczar.\"}", actualResponse)
+    fun get_orderbook_with_invalid_currency_pair_returns_error(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/ETHUSD1/orderbook")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains(
+                        "Invalid currency pair. Please provide a 6 character currency " +
+                                "pair - valid example: BTCZAR | btczar."
+                    )
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun create_limit_order_with_valid_data_returns_success() {
-        val limitOrder = LimitOrderDTO(Side.SELL, 0.5, 100, BTC_ZAR)
-        val executedOrder = createOrder(Side.SELL, 0.5, 100, BTC_ZAR)
-        whenever(orderBookService.createLimitOrder(any())).thenReturn(executedOrder)
-
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/order/limit")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(limitOrder)))
-            .andExpect(status().isOk)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("Limit order created successfully.", actualResponse)
-        verify(orderBookService).createLimitOrder(any())
-        verify(tradeHistoryService).addTradeOrder(executedOrder)
+    fun get_orderbook_with_special_character_in_currency_pair_error(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTC@AR/orderbook")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains(
+                        "Invalid currency pair. Please provide a 6 character currency " +
+                                "pair - valid example: BTCZAR | btczar."
+                    )
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun create_limit_order_with_valid_data_but_no_executed_order_returns_success() {
-        val limitOrder = LimitOrderDTO(Side.SELL, 0.5, 100, BTC_ZAR)
-        whenever(orderBookService.createLimitOrder(any())).thenReturn(null)
+    fun create_limit_order_with_valid_data_returns_success(vertx: Vertx, testContext: VertxTestContext) {
+        val limitOrder = LimitOrderDTO(Side.SELL, 0.11498758, 1204532, BTC_ZAR)
+        val json = objectMapper.writeValueAsString(limitOrder)
+        val client = vertx.createHttpClient()
 
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/order/limit")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(limitOrder)))
-            .andExpect(status().isOk)
-            .andReturn()
+        val initialTradeHistorySize = tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
+        val initialAsksSize = orderBookService.getOrderBookBy(BTC_ZAR).asks.size
 
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("Limit order created successfully.", actualResponse)
-        verify(orderBookService).createLimitOrder(any())
-        verify(tradeHistoryService, never()).addTradeOrder(any())
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/order/limit")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertEquals("\"Limit order created successfully.\"", buffer.toString())
+                    assertEquals(
+                        initialTradeHistorySize + 1,
+                        tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
+                    )
+                    assertEquals(initialAsksSize - 1, orderBookService.getOrderBookBy(BTC_ZAR).bids.size)
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun create_limit_order_with_invalid_data_returns_bad_request() {
+    fun create_limit_order_with_valid_data_but_no_matched_order_returns_success(
+        vertx: Vertx,
+        testContext: VertxTestContext
+    ) {
+        val limitOrder = LimitOrderDTO(Side.SELL, 0.518, 123400, BTC_ZAR)
+        val json = objectMapper.writeValueAsString(limitOrder)
+
+        val initialTradeHistorySize = tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
+        val initialAsksSize = orderBookService.getOrderBookBy(BTC_ZAR).asks.size
+
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/order/limit")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertEquals("\"Limit order created successfully.\"", buffer.toString())
+                    assertEquals(
+                        initialTradeHistorySize,
+                        tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
+                    )
+                    assertEquals(initialAsksSize + 1, orderBookService.getOrderBookBy(BTC_ZAR).asks.size)
+                    testContext.completeNow()
+                }
+            })
+    }
+
+    @Test
+    fun create_limit_order_with_invalid_data_returns_bad_request(vertx: Vertx, testContext: VertxTestContext) {
         val limitOrder = LimitOrderDTO(Side.SELL, 0.0, 0, BTC_ZAR)
+        val json = objectMapper.writeValueAsString(limitOrder)
 
-        val mvcResult: MvcResult = mockMvc.perform(post("/api/order/limit")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(limitOrder)))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-23,\"message\":\"Invalid limitOrder. Please provide a 6 character currency pair - valid example: BTCZAR | btczar.\\nQuantity and price must be greater than 0.\\nSide must be either 'BUY' or 'SELL'.\"}", actualResponse)
-        verify(orderBookService, never()).createLimitOrder(any())
-        verify(tradeHistoryService, never()).addTradeOrder(any())
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/order/limit")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid limitOrder. Please provide a 6 character currency pair - valid example: BTCZAR | btczar")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_tradehistory_with_valid_parameters_returns_tradehistory() {
-        val tradeHistory = TradeHistory()
-        whenever(tradeHistoryService.getTradeHistoryBy(anyString(), anyInt(), anyInt())).thenReturn(tradeHistory)
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR/trades")
-            .param(skip, "5")
-            .param(limit, "17")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals(objectMapper.writeValueAsString(tradeHistory), actualResponse)
-        verify(tradeHistoryService).getTradeHistoryBy(eq(BTC_ZAR), eq(5), eq(17))
+    fun get_tradehistory_withhout_limit_and_skip_parames_calls_with_defaults(
+        vertx: Vertx,
+        testContext: VertxTestContext
+    ) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTCEUR/trades")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    val tradeHistory = objectMapper.readValue(buffer.toString(), TradeHistory::class.java)
+                    assertEquals(1, tradeHistory.trades.size)
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_tradehistory_withhout_limit_and_skip_parames_calls_with_defaults() {
-        val tradeHistory = TradeHistory()
-        whenever(tradeHistoryService.getTradeHistoryBy(anyString(), anyInt(), anyInt())).thenReturn(tradeHistory)
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR/trades")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals(objectMapper.writeValueAsString(tradeHistory), actualResponse)
-        verify(tradeHistoryService).getTradeHistoryBy(eq(BTC_ZAR), eq(0), eq(10))
+    fun get_tradehistory_with_valid_parameters_returns_tradehistory(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTCEUR/trades?skip=5&limit=17")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    val tradeHistory = objectMapper.readValue(buffer.toString(), TradeHistory::class.java)
+                    assertEquals(0, tradeHistory.trades.size)
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_tradehistory_with_invalid_currency_pair_returns_error() {
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTC@AR/trades")
-            .param(skip, "0")
-            .param(limit, "10")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-21,\"message\":\"Invalid currency pair. Please provide a 6 character currency pair - valid example: BTCZAR | btczar.\"}", actualResponse)
+    fun get_tradehistory_with_invalid_currency_pair_returns_error(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTC@AR/trades?skip=0&limit=10")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid currency pair or query parameters. Query parameters 'skip' and 'limit' must be non-negative.")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_tradehistory_with_negative_skip_returns_error() {
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR/trades")
-            .param(skip, "-1")
-            .param(limit, "10")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-22,\"message\":\"Invalid skip or limit value. Please provide a positive integer value for skip and limit (max limit is 100).\"}", actualResponse)
+    fun get_tradehistory_with_negative_skip_returns_error(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTCZAR/trades?skip=-1&limit=10")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid currency pair or query parameters. Query parameters " +
+                            "'skip' and 'limit' must be non-negative.")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_tradehistory_with_negative_limit_returns_error() {
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR/trades")
-            .param(skip, "0")
-            .param(limit, "-1")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-22,\"message\":\"Invalid skip or limit value. Please provide a positive integer value for skip and limit (max limit is 100).\"}", actualResponse)
+    fun get_tradehistory_with_negative_limit_returns_error(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTCZAR/trades?skip=0&limit=-1")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid currency pair or query parameters. Query parameters " +
+                            "'skip' and 'limit' must be non-negative.")
+                    testContext.completeNow()
+                }
+            })
     }
 
     @Test
-    fun get_tradehistory_with_limit_exceeding_max_returns_error() {
-        val mvcResult: MvcResult = mockMvc.perform(get("/api/BTCZAR/trades")
-            .param(skip, "0")
-            .param(limit, "101")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest)
-            .andReturn()
-        val actualResponse = mvcResult.response.contentAsString
-        assertEquals("{\"code\":-22,\"message\":\"Invalid skip or limit value. Please provide a positive integer value for skip and limit (max limit is 100).\"}", actualResponse)
+    fun get_tradehistory_with_limit_exceeding_max_returns_error(vertx: Vertx, testContext: VertxTestContext) {
+        val client = vertx.createHttpClient()
+        client.request(HttpMethod.GET, vertXServerPort, HOST, "/api/BTCZAR/trades?skip=0&limit=101")
+            .compose { req -> req.send().compose(HttpClientResponse::body) }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertThat(buffer.toString()).contains("Invalid currency pair or query parameters. Query parameters" +
+                            " 'skip' and 'limit' must be non-negative.")
+                    testContext.completeNow()
+                }
+            })
     }
 }

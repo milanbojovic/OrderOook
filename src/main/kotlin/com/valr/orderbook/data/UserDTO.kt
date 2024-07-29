@@ -1,8 +1,9 @@
 package com.valr.orderbook.data
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import javax.validation.constraints.NotNull
 
 data class UserDTO(
-    @field:NotNull val username: String,
-    @field:NotNull val password: String
+    @JsonProperty("username") @field:NotNull val username: String,
+    @JsonProperty("password") @field:NotNull val password: String
 )
