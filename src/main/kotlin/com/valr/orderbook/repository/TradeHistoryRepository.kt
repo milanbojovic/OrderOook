@@ -7,11 +7,23 @@ import com.valr.orderbook.util.CurrencyPairConstants.*
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Component
 
+/**
+ * Repository class for managing trade history.
+ * This class provides methods to retrieve trade history data.
+ */
 @Component
 class TradeHistoryRepository {
 
     var tradeHistory: TradeHistory = TradeHistory()
 
+    /**
+     * Retrieves the trade history for a given currency pair.
+     *
+     * @param currencyPair The currency pair to retrieve trade history for.
+     * @param skip The number of records to skip.
+     * @param limit The maximum number of records to return.
+     * @return A TradeHistory object containing the trade history for the specified currency pair.
+     */
     fun filterTradeHistoryBy(currencyPair: String, skip: Int, limit: Int): TradeHistory {
         return TradeHistory(
             trades = tradeHistory.trades
@@ -22,19 +34,36 @@ class TradeHistoryRepository {
         )
     }
 
+    /**
+     * Adds a new trade to the trade history.
+     *
+     * @param tradeHistory The TradeHistory object containing the new trade to add.
+     */
     fun addTrade(trade: Trade) {
         tradeHistory.trades.add(trade)
     }
 
+    /**
+     * Clears the trade history for a given currency pair.
+     *
+     * @param currencyPair The currency pair to clear trade history for.
+     */
     fun getNextAvailableId(): Int {
         return tradeHistory.trades.maxOfOrNull { it.id }?.plus(1) ?: 0
     }
 
+    /**
+     * Adds initial data to the repository on startup.
+     * This is just for easier presentation purposes; for a live system, initialization would be added in unit tests.
+     */
     @PostConstruct
     fun insertData() {
         createExampleTradesList(tradeHistory)
     }
 
+    /**
+     * Creates an example trades  with initial data and adds them to tradeHistory.
+     */
     private fun createExampleTradesList(tradeHistory: TradeHistory) {
         val trades = mutableListOf<Trade>()
         tradeHistory.trades = trades
