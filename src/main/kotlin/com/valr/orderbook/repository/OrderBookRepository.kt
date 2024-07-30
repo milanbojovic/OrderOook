@@ -63,15 +63,6 @@ class OrderBookRepository {
     }
 
     /**
-     * Updates the OrderBook with the given OrderBook.
-     *
-     * @param orderBook The new OrderBook to set.
-     */
-    fun updateOrderBook(orderBook: OrderBook) {
-        this.orderBook = orderBook
-    }
-
-    /**
      * Executes logic for matched order. If the quantities are equal, the matched order is removed.
      * Otherwise, the matched order's quantity is updated and the order book is sorted to reflect possible
      * order update due to change in quantity.
@@ -132,9 +123,9 @@ class OrderBookRepository {
      */
     private fun sortOrderBookBy(order: Order) {
         if (order.side == Side.BUY) {
-            orderBook.bids.sorted()
+            orderBook.bids.sort()
         } else {
-            orderBook.asks.sorted()
+            orderBook.asks.sort()
         }
     }
 
@@ -174,30 +165,10 @@ class OrderBookRepository {
      */
     private fun matchOppositeOrderType(order: Order): Order? {
         return if (order.side == Side.BUY) {
-            matchBuyOrdersByPriceAndQuantity(order)
+            orderBook.asks.firstOrNull { it.currencyPair == order.currencyPair && it.price <= order.price && it.quantity >= order.quantity }
         } else {
-            matchSellOrdersByPriceAndQuantity(order)
+            return orderBook.bids.firstOrNull { it.currencyPair == order.currencyPair && it.price >= order.price && it.quantity >= order.quantity }
         }
-    }
-
-    /**
-     * Matches a buy order with the asks.
-     *
-     * @param order the buy order to match
-     * @return an optional containing the matched ask if found, otherwise empty
-     */
-    private fun matchBuyOrdersByPriceAndQuantity(order: Order): Order? {
-        return orderBook.asks.firstOrNull { it.price <= order.price && it.quantity >= order.quantity }
-    }
-
-    /**
-     * Matches a sell order with the bids.
-     *
-     * @param order the sell order to match
-     * @return an optional containing the matched bid if found, otherwise empty
-     */
-    private fun matchSellOrdersByPriceAndQuantity(order: Order): Order? {
-        return orderBook.bids.firstOrNull { it.price >= order.price && it.quantity >= order.quantity }
     }
 
     /**

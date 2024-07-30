@@ -32,8 +32,6 @@ class OrderBookService @Autowired constructor(
      * @return the created order
      */
     fun createLimitOrder(limitOrderDTO: LimitOrderDTO): Order? {
-        val orderBookByCurrency = orderBookRepository.filterOrderBookBy(limitOrderDTO.currencyPair)
-        orderBookRepository.updateOrderBook(orderBookByCurrency)
         return orderBookRepository.createOrder(Order(limitOrderDTO))
     }
 }

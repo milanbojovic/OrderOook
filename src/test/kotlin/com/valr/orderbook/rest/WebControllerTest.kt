@@ -7,6 +7,7 @@ import com.valr.orderbook.data.UserDTO
 import com.valr.orderbook.data.enum.Side
 import com.valr.orderbook.service.OrderBookService
 import com.valr.orderbook.service.TradeHistoryService
+import com.valr.orderbook.util.CurrencyPairConstants
 import com.valr.orderbook.util.TestHelper.BTC_ZAR
 import com.valr.orderbook.util.TestHelper.ETH_USD
 import io.vertx.core.Vertx
@@ -179,13 +180,13 @@ class WebControllerTest() {
     }
 
     @Test
-    fun create_limit_order_with_valid_data_returns_success(vertx: Vertx, testContext: VertxTestContext) {
-        val limitOrder = LimitOrderDTO(Side.SELL, 0.11498758, 1204532, BTC_ZAR)
+    fun create_limit_order_with_valid_data_full_match_returns_success(vertx: Vertx, testContext: VertxTestContext) {
+        val limitOrder = LimitOrderDTO(Side.BUY, 0.00100004, 1203000, CurrencyPairConstants.BTC_ZAR)
         val json = objectMapper.writeValueAsString(limitOrder)
         val client = vertx.createHttpClient()
 
         val initialTradeHistorySize = tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
-        val initialAsksSize = orderBookService.getOrderBookBy(BTC_ZAR).asks.size
+        val initialBidsSize = orderBookService.getOrderBookBy(BTC_ZAR).asks.size
 
         client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/order/limit")
             .compose { req ->
@@ -199,7 +200,34 @@ class WebControllerTest() {
                         initialTradeHistorySize + 1,
                         tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
                     )
-                    assertEquals(initialAsksSize - 1, orderBookService.getOrderBookBy(BTC_ZAR).bids.size)
+                    assertEquals(initialBidsSize - 1, orderBookService.getOrderBookBy(BTC_ZAR).asks.size)
+                    testContext.completeNow()
+                }
+            })
+    }
+
+    @Test
+    fun create_limit_order_with_valid_data_partial_match_returns_success(vertx: Vertx, testContext: VertxTestContext) {
+        val limitOrder = LimitOrderDTO(Side.SELL, 0.10498758, 1204532, BTC_ZAR)
+        val json = objectMapper.writeValueAsString(limitOrder)
+        val client = vertx.createHttpClient()
+
+        val initialTradeHistorySize = tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
+        val initialBidsSize = orderBookService.getOrderBookBy(BTC_ZAR).bids.size
+
+        client.request(HttpMethod.POST, vertXServerPort, HOST, "/api/order/limit")
+            .compose { req ->
+                req.putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                req.send(json).compose(HttpClientResponse::body)
+            }
+            .onComplete(testContext.succeeding { buffer ->
+                testContext.verify {
+                    assertEquals("\"Limit order created successfully.\"", buffer.toString())
+                    assertEquals(
+                        initialTradeHistorySize + 1,
+                        tradeHistoryService.getTradeHistoryBy(BTC_ZAR, 0, 10).trades.size
+                    )
+                    assertEquals(initialBidsSize, orderBookService.getOrderBookBy(BTC_ZAR).bids.size)
                     testContext.completeNow()
                 }
             })

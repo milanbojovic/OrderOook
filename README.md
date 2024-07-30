@@ -1,6 +1,6 @@
 # Order Book Service
 
-This repository contains the Order Book Application, a Kotlin Spring Boot application that provides RESTful APIs for managing order books and user authentication.
+This repository contains the Order Book Application, a Kotlin Spring Boot application (Vertx server) that provides RESTful APIs for managing order books and user authentication.
 
 ## Table of Contents
 
